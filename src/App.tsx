@@ -15,6 +15,7 @@ const MentalHealthSection = lazy(() => import('./components/MentalHealthSection'
 const AIChatbot = lazy(() => import('./components/AIChatbot').then(m => ({ default: m.AIChatbot })));
 const EmergencyThreatMap = lazy(() => import('./components/EmergencyThreatMap').then(m => ({ default: m.EmergencyThreatMap })));
 const AdminPortal = lazy(() => import('./components/AdminPortal').then(m => ({ default: m.AdminPortal })));
+const TestingHub = lazy(() => import('./components/TestingHub').then(m => ({ default: m.TestingHub })));
 
 import {
   EmergencyAnalysisResponse,
@@ -25,11 +26,11 @@ import {
 import { analyzeEmergency } from './services/api';
 import { TRANSLATIONS } from './utils/translations';
 import { hasEventBeenAlerted, markEventAlerted } from './services/notifications';
-import { PhoneCall, HeartHandshake, Bot, MapPin, ShieldAlert } from 'lucide-react';
+import { PhoneCall, HeartHandshake, Bot, MapPin, ShieldAlert, FlaskConical } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>('en');
-  const [activeTab, setActiveTab] = useState<'emergency' | 'mental-health' | 'chat' | 'map' | 'admin'>('emergency');
+  const [activeTab, setActiveTab] = useState<'emergency' | 'mental-health' | 'chat' | 'map' | 'admin' | 'testing'>('emergency');
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('app-theme') as 'light' | 'dark' | null;
@@ -230,6 +231,16 @@ export const App: React.FC = () => {
           <ShieldAlert size={18} aria-hidden="true" />
           <span>Admin</span>
         </button>
+
+        <button
+          type="button"
+          className={`nav-tab-btn tab-testing ${activeTab === 'testing' ? 'active' : ''}`}
+          onClick={() => setActiveTab('testing')}
+          aria-pressed={activeTab === 'testing'}
+        >
+          <FlaskConical size={18} aria-hidden="true" />
+          <span>Testing Hub</span>
+        </button>
       </nav>
 
       <main id="main-content">
@@ -325,6 +336,22 @@ export const App: React.FC = () => {
 
           {activeTab === 'admin' && (
             <AdminPortal />
+          )}
+
+          {activeTab === 'testing' && (
+            <TestingHub
+              currentLanguage={currentLanguage}
+              onTriggerAlert={(urgency) => {
+                setActiveAlert({
+                  urgency,
+                  id: `sim-${Date.now()}`,
+                });
+              }}
+              onSimulateScenario={({ description, location }) => {
+                handleIncidentSubmit(description, location, null);
+                setActiveTab('emergency');
+              }}
+            />
           )}
         </div>
         </Suspense>

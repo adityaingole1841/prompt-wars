@@ -7,7 +7,12 @@
     "dev": "concurrently -k -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run server\" \"npm run client\"",
     "client": "vite",
     "server": "tsx watch server/server.ts",
-    "test": "tsx tests/multilingual_and_safety.test.ts",
+    "test": "tsx tests/run_all.ts",
+    "test:safety": "tsx tests/multilingual_and_safety.test.ts",
+    "test:chat": "tsx tests/chat_safety_engine.test.ts",
+    "test:weather": "tsx tests/weather_service.test.ts",
+    "test:api": "tsx tests/server_api.test.ts",
+    "test:image": "tsx tests/image_optimizer.test.ts",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },

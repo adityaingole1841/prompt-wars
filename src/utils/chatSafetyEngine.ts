@@ -35,6 +35,13 @@ export function generateEmergencyChatResponse(userMessage: string): {
 
   // 1.1 CPR & Cardiac Arrest
   if (/cpr|not breathing|heart stopped|cardiac arrest|chest compression|हृदय गति रुकना|श्वास थांबला/i.test(q)) {
+    if (isMarathi) {
+      return {
+        urgency: 'CRITICAL',
+        suggestedAction: 'call_112',
+        reply: `🚨 **तातडीचे सीपीआर (CPR) निर्देश — त्वरित कृती करा:**\n\n1. **ताबडतोब 112 (किंवा 108 रुग्णवाहिका) वर कॉल करा** किंवा कोणाला तरी कॉल करायला सांगा. फोन स्पीकरवर ठेवा.\n2. **प्रतिसाद तपासा:** व्यक्तीच्या खांद्यावर थोपटा आणि विचारा *"तुम्ही ठीक आहात का?"* जर प्रतिसाद नसेल आणि श्वास चालू नसेल:\n3. **स्थिती:** व्यक्तीला सपाट, कडक जमिनीवर पाठीवर झोपवा.\n4. **हाताची जागा:** तुमचा एक हात छातीच्या मध्यभागी (उरोस्थीवर) ठेवा, दुसरा हात त्यावर ठेवून बोटे एकमेकांत गुंफा.\n5. **जोरात आणि वेगाने दाबा:**\n   - छाती किमान **2 इंच (5 सेमी)** खाली दाबा.\n   - वेग: **100 ते 120 वेळा प्रति मिनिट**.\n   - प्रत्येक दाबानंतर छाती पूर्णपणे वर येऊ द्या.\n6. **थांबू नका** जोपर्यंत वैद्यकीय मदत येत नाही किंवा व्यक्ती स्वतः श्वास घेऊ लागत नाही.`,
+      };
+    }
     if (isHindi) {
       return {
         urgency: 'CRITICAL',
@@ -50,7 +57,21 @@ export function generateEmergencyChatResponse(userMessage: string): {
   }
 
   // 1.2 Chest Pain / Heart Attack Warning
-  if (/chest pain|heart attack|angina|tightness in chest|सीने में दर्द|छातीत दुखणे|हार्ट अटैक/i.test(q)) {
+  if (/chest pain|heart attack|angina|tightness in chest|सीने में .*दर्द|सीने का दर्द|छातीत .*दुखणे|छातीत कळ|हार्ट अटैक|छाती में दर्द/i.test(q)) {
+    if (isMarathi) {
+      return {
+        urgency: 'CRITICAL',
+        suggestedAction: 'call_112',
+        reply: `🚨 **अतिगंभीर: छातीत दुखणे / संभाव्य हृदयविकाराचा झटका:**\n\n1. **ताबडतोब 112 किंवा 108 वर कॉल करा.** प्रत्येक सेकंद महत्त्वाचा आहे.\n2. **विश्रांती स्थिती:** व्यक्तीला जमिनीवर बसवा, भिंतीला टेकून गुडघे थोडे वाकवून ठेवा. घट्ट कपडे सैल करा.\n3. **शांत ठेवा:** घाबरू देऊ नका, शांत ठेवा; चालायला लावू नका.\n4. **अॅस्पिरिन (पात्र असल्यास):** जर शुद्धीवर असेल, अॅलर्जी नसेल तर एक 300mg अॅस्पिरिन हळूहळू चावून खाण्यास सांगा.\n5. **जर बेशुद्ध झाला व श्वास थांबला:** ताबडतोब 100-120/मिनिट वेगाने सीपीआर (CPR) छाती दाबणे सुरू करा.`,
+      };
+    }
+    if (isHindi) {
+      return {
+        urgency: 'CRITICAL',
+        suggestedAction: 'call_112',
+        reply: `🚨 **गंभीर चेतावनी: सीने में दर्द / संभावित दिल का दौरा (Heart Attack):**\n\n1. **तुरंत 112 या 108 पर कॉल करें।** हर एक मिनट कीमती है।\n2. **विश्राम की स्थिति:** व्यक्ति को फर्श पर दीवार के सहारे बैठाएं (घुटने मुड़े हुए)। तंग कपड़े या कॉलर ढीले करें।\n3. **शांत रखें:** व्यक्ति को बिल्कुल शांत रखें; चलने-फिरने न दें।\n4. **एस्पिरिन (यदि उपयुक्त हो):** यदि व्यक्ति होश में है और डॉक्टर ने मना नहीं किया है, तो 300mg एस्पिरिन चबाने दें।\n5. **यदि बेहोश हो और सांस न चले:** तुरंत 100-120/मिनट की गति से सीपीआर (CPR) शुरू करें।`,
+      };
+    }
     return {
       urgency: 'CRITICAL',
       suggestedAction: 'call_112',
@@ -350,27 +371,30 @@ export function generateEmergencyChatResponse(userMessage: string): {
   }
 
   /* ─────────────────────────────────────────────────────────────
-     7. DEFAULT INTELLIGENT COMPREHENSIVE FALLBACK
+     7. DEFAULT INTELLIGENT COMPREHENSIVE FALLBACK & GREETINGS
   ───────────────────────────────────────────────────────────── */
+  const isGreeting = /^(hi|hello|hey|namaste|namaskar|good\s*(morning|afternoon|evening)|how\s*(are\s*you|does\s*this|can\s*you))/i.test(q) || q.length < 15;
+  const fallbackUrgency = isGreeting ? 'LOW' : 'MEDIUM';
+
   if (isHindi) {
     return {
-      urgency: 'MEDIUM',
-      suggestedAction: 'first_aid',
+      urgency: fallbackUrgency,
+      suggestedAction: isGreeting ? undefined : 'first_aid',
       reply: `नमस्ते! मैं आपका **आपातकालीन, स्वास्थ्य, मानसिक स्वास्थ्य, आपदा और मौसम सुरक्षा AI सहायक** हूँ।\n\nआप मुझसे इन विषयों पर कोई भी सवाल पूछ सकते हैं:\n• **स्वास्थ्य व प्राथमिक उपचार:** तेज बुखार, सिरदर्द, उल्टी-दस्त, जलना, सांप का काटना, सीपीआर (CPR), फ्रैक्चर\n• **मानसिक स्वास्थ्य व संबल:** घबराहट, पैनिक अटैक, अवसाद, चिंता, टेली-मानस 14416 सहायता\n• **आपदा प्रबंधन:** भूकंप, बाढ़, चक्रवात, इमारत में आग, लैंडस्लाइड, 72 घंटे की गो-बैग किट\n• **मौसम सुरक्षा:** लू (Heatwave), शीतलहर, भारी बारिश, आसमानी बिजली, वायु प्रदूषण (AQI)\n\n🚨 *यदि कोई गंभीर जीवन का खतरा है, तो कृपया तुरंत **112** पर कॉल करें।* मैं आपकी क्या मदद कर सकता हूँ?`,
     };
   }
 
   if (isMarathi) {
     return {
-      urgency: 'MEDIUM',
-      suggestedAction: 'first_aid',
+      urgency: fallbackUrgency,
+      suggestedAction: isGreeting ? undefined : 'first_aid',
       reply: `नमस्कार! मी तुमचा **आपत्कालीन, आरोग्य, मानसिक आरोग्य, आपत्ती आणि हवामान सुरक्षा AI सहाय्यक** आहे.\n\nतुम्ही मला खालील विषयांवर कोणताही प्रश्न विचारू शकता:\n• **आरोग्य आणि प्रथमोपचार:** तीव्र ताप, डोकेदुखी, पोटदुखी, जळणे, सर्पदंश, सीपीआर (CPR), श्वास कोंडणे\n• **मानसिक आरोग्य:** पॅनिक अटॅक, अतिचिंता, उदासीनता, ताणतणाव, टेली-मानस 14416 हेल्पलाइन\n• **आपत्ती व्यवस्थापन:** भूकंप, पूर, चक्रीवादळ, आग, आपत्कालीन किट\n• **हवामान सुरक्षा:** उष्णतेची लाट (लू), मुसळधार पाऊस, वीज पडणे, हवेचे प्रदूषण\n\n🚨 *तातडीचा धोका असल्यास ताबडतोब **112** डायल करा.* मी तुम्हाला काय मदत करू शकतो?`,
     };
   }
 
   return {
-    urgency: 'MEDIUM',
-    suggestedAction: 'first_aid',
+    urgency: fallbackUrgency,
+    suggestedAction: isGreeting ? undefined : 'first_aid',
     reply: `Hello! I am your **Emergency, Health, Mental Health, Disaster & Weather AI Assistant** for India.\n\nI can help you understand and answer questions about:\n• **Health & First Aid:** High fever, severe headache, stomach pain/vomiting, burns, cuts/bleeding, fractures, dog/snake bites, CPR, choking, diabetic emergencies.\n• **Mental Health & Support:** Panic attack grounding (5-4-3-2-1), anxiety, deep stress, depression, insomnia, and 24/7 free counseling via Tele-MANAS (14416).\n• **Disasters & Preparedness:** Earthquake (Drop, Cover, Hold), floods, cyclones, building fires, landslides, and 72-hour emergency go-bag supplies.\n• **Weather Hazards:** Heatwave (loo) safety, thunderstorm/lightning 30-30 rule, monsoon precautions, hazardous air quality/AQI, cold waves.\n\n⚠️ *If this is an immediate, life-threatening crisis, dial **112** or **108** right away.* What question can I assist you with?`,
   };
 }
