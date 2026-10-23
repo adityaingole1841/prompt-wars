@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+import { fetchUnifiedWeather } from '../services/weatherService';
 import {
   AlertTriangle,
   CloudRain,
@@ -260,58 +261,9 @@ function analyzeDay(day: ForecastDay): DayAlert | null {
   return null; // All clear
 }
 
-/* ─────────────── Fetch 7-day forecast ─────────────── */
-async function fetchForecast(lat: number, lon: number): Promise<ForecastDay[]> {
-  const params = new URLSearchParams({
-    latitude: lat.toFixed(4),
-    longitude: lon.toFixed(4),
-    daily: [
-      'weather_code',
-      'temperature_2m_max',
-      'temperature_2m_min',
-      'precipitation_sum',
-      'wind_speed_10m_max',
-      'uv_index_max',
-      'snowfall_sum',
-    ].join(','),
-    wind_speed_unit: 'kmh',
-    timezone: 'auto',
-    forecast_days: '7',
-  });
-
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
-  if (!res.ok) throw new Error(`Forecast API error: ${res.status}`);
-  const json = await res.json();
-  const d = json.daily;
-
-  return (d.time as string[]).map((date: string, i: number) => ({
-    date,
-    precipSum: d.precipitation_sum[i] ?? 0,
-    tempMax: d.temperature_2m_max[i] ?? 20,
-    tempMin: d.temperature_2m_min[i] ?? 15,
-    windMax: d.wind_speed_10m_max[i] ?? 0,
-    weatherCode: d.weather_code[i] ?? 0,
-    uvMax: d.uv_index_max[i] ?? 0,
-    snowfallSum: d.snowfall_sum[i] ?? 0,
-    visibilityMin: 10,
-  }));
-}
-
-/* ─────────────── Reverse Geocode (city only) ─────────────── */
-async function getCity(lat: number, lon: number): Promise<string> {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=en`,
-      { headers: { 'User-Agent': 'EmergencyHelperIndia/1.0' } }
-    );
-    if (!res.ok) return '';
-    const data = await res.json();
-    const a = data?.address;
-    return a?.city || a?.town || a?.village || a?.county || '';
-  } catch {
-    return '';
-  }
-}
+/* ─────────────── NOTE: fetch/geocode delegated to shared weatherService ─── */
+// fetchUnifiedWeather from '../services/weatherService' provides both forecast
+// and reverse-geocoding, deduplicating requests shared with WeatherWidget.
 
 /* ─────────────── UI Labels ─────────────── */
 const LABELS = {
@@ -354,7 +306,7 @@ const LABELS = {
 };
 
 /* ─────────────── Component ─────────────── */
-export const DisasterAlertBanner: React.FC<DisasterAlertBannerProps> = ({ language }) => {
+export const DisasterAlertBanner: React.FC<DisasterAlertBannerProps> = memo(({ language }) => {
   const L = (LABELS as any)[language] || LABELS.en;
 
   const [alerts, setAlerts] = useState<DayAlert[]>([]);
@@ -367,10 +319,20 @@ export const DisasterAlertBanner: React.FC<DisasterAlertBannerProps> = ({ langua
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          const [forecast, city] = await Promise.all([
-            fetchForecast(pos.coords.latitude, pos.coords.longitude),
-            getCity(pos.coords.latitude, pos.coords.longitude),
-          ]);
+          // Uses shared weatherService — deduplicates requests with WeatherWidget & IncidentForm
+          const unified = await fetchUnifiedWeather(pos.coords.latitude, pos.coords.longitude);
+          const forecast: ForecastDay[] = unified.daily.map((d) => ({
+            date: d.date,
+            precipSum: d.precipSum,
+            tempMax: d.tempMax,
+            tempMin: d.tempMin,
+            windMax: d.windMax,
+            weatherCode: d.weatherCode,
+            uvMax: d.uvMax,
+            snowfallSum: d.snowfallSum,
+            visibilityMin: d.visibilityMin,
+          }));
+          const city = unified.current.cityName;
           const found: DayAlert[] = [];
           for (const day of forecast) {
             const a = analyzeDay(day);
@@ -569,4 +531,6 @@ export const DisasterAlertBanner: React.FC<DisasterAlertBannerProps> = ({ langua
       <p className="disaster-source">{L.source}</p>
     </section>
   );
-};
+});
+
+DisasterAlertBanner.displayName = 'DisasterAlertBanner';

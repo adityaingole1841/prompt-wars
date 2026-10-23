@@ -1,11 +1,11 @@
-// Emergency Helper India - Service Worker for Push Notifications
+// Emergency Helper India - Service Worker for Offline Fallback & Push Notifications
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('push', (event) => {
@@ -19,7 +19,7 @@ self.addEventListener('push', (event) => {
     if (event.data) {
       payload = event.data.json();
     }
-  } catch (err) {
+  } catch (_err) {
     if (event.data) {
       payload.body = event.data.text();
     }
@@ -43,14 +43,14 @@ self.addEventListener('notificationclick', (event) => {
   const targetUrl = event.notification.data?.url || '/';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if (client.url && 'focus' in client) {
           return client.focus();
         }
       }
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
       }
     })
   );

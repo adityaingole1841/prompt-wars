@@ -340,6 +340,18 @@ body {
   background-color: var(--color-white);
 }
 
+/* Accessible validation error state */
+.emergency-textarea.input-error {
+  border-color: #dc2626;
+  background-color: #fff5f5;
+}
+
+.emergency-textarea.input-error:focus {
+  border-color: #dc2626;
+  outline: 3px solid rgba(220, 38, 38, 0.3);
+  outline-offset: 0;
+}
+
 /* Quick Emergency Scenario Chips */
 .scenario-chips-row {
   display: flex;

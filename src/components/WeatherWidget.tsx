@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+import { fetchUnifiedWeather, clearWeatherCache } from '../services/weatherService';
 import {
   Cloud,
   CloudRain,
@@ -252,65 +253,10 @@ function getWeatherTips(data: WeatherData, lang: SupportedLanguage): Tip[] {
   return tips;
 }
 
-/* ─────────────── Reverse Geocode via Open-Meteo ─────────────── */
-async function reverseGeocode(lat: number, lon: number): Promise<string> {
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=en`;
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'EmergencyHelperIndia/1.0' },
-    });
-    if (!res.ok) return 'Your Location';
-    const data = await res.json();
-    const addr = data?.address;
-    return (
-      addr?.city || addr?.town || addr?.village || addr?.county || addr?.state || 'Your Location'
-    );
-  } catch {
-    return 'Your Location';
-  }
-}
-
-/* ─────────────── Fetch Weather from Open-Meteo ─────────────── */
-async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
-  const params = new URLSearchParams({
-    latitude: lat.toFixed(4),
-    longitude: lon.toFixed(4),
-    current: [
-      'temperature_2m',
-      'apparent_temperature',
-      'relative_humidity_2m',
-      'wind_speed_10m',
-      'wind_direction_10m',
-      'uv_index',
-      'visibility',
-      'precipitation',
-      'weather_code',
-    ].join(','),
-    wind_speed_unit: 'kmh',
-    timezone: 'auto',
-  });
-
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
-  if (!res.ok) throw new Error(`Weather API error: ${res.status}`);
-  const json = await res.json();
-  const c = json.current;
-
-  const cityName = await reverseGeocode(lat, lon);
-
-  return {
-    temperature: Math.round(c.temperature_2m),
-    feelsLike: Math.round(c.apparent_temperature),
-    humidity: c.relative_humidity_2m,
-    windSpeed: Math.round(c.wind_speed_10m),
-    windDirection: c.wind_direction_10m,
-    uvIndex: Math.round(c.uv_index ?? 0),
-    visibility: Math.round((c.visibility ?? 10000) / 1000),
-    precipitationMm: c.precipitation ?? 0,
-    weatherCode: c.weather_code,
-    cityName,
-    fetchedAt: new Date(),
-  };
-}
+/* ─────────────── NOTE: fetch/geocode delegated to shared weatherService ─── */
+// fetchUnifiedWeather & reverseGeocode are imported from '../services/weatherService'
+// This eliminates duplicate Nominatim + Open-Meteo requests when WeatherWidget,
+// DisasterAlertBanner, and IncidentForm all mount with the same coordinates.
 
 /* ─────────────── UI Labels ─────────────── */
 const LABELS = {
@@ -368,7 +314,7 @@ const LABELS = {
 };
 
 /* ─────────────── Component ─────────────── */
-export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ language }) => {
+export const WeatherWidget: React.FC<WeatherWidgetProps> = memo(({ language }) => {
   const L = (LABELS as any)[language] || LABELS.en;
 
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -379,8 +325,22 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ language }) => {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          const data = await fetchWeather(pos.coords.latitude, pos.coords.longitude);
-          setWeather(data);
+          // Uses shared weatherService — deduplicates requests with DisasterAlertBanner & IncidentForm
+          const unified = await fetchUnifiedWeather(pos.coords.latitude, pos.coords.longitude);
+          const c = unified.current;
+          setWeather({
+            temperature: c.temperature,
+            feelsLike: c.feelsLike,
+            humidity: c.humidity,
+            windSpeed: c.windSpeed,
+            windDirection: c.windDirection,
+            uvIndex: c.uvIndex,
+            visibility: c.visibility,
+            precipitationMm: c.precipitationMm,
+            weatherCode: c.weatherCode,
+            cityName: c.cityName,
+            fetchedAt: c.fetchedAt,
+          });
           setState('idle');
         } catch {
           setState('error');
@@ -393,6 +353,11 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ language }) => {
       { timeout: 10000, maximumAge: 300000 }
     );
   }, []);
+
+  const handleForceRefresh = useCallback(() => {
+    clearWeatherCache();
+    load();
+  }, [load]);
 
   // Auto-refresh every 10 minutes when data is loaded
   useEffect(() => {
@@ -486,7 +451,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ language }) => {
         <span className="weather-title">{L.title}</span>
         <button
           className="weather-refresh-btn"
-          onClick={load}
+          onClick={handleForceRefresh}
           title={L.retry}
           type="button"
           aria-label="Refresh weather"
@@ -568,4 +533,6 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ language }) => {
       <p className="weather-source">{L.source}</p>
     </section>
   );
-};
+});
+
+WeatherWidget.displayName = 'WeatherWidget';

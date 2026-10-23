@@ -1,18 +1,21 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, Suspense, lazy } from 'react';
 import { Header } from './components/Header';
 import { Call112Banner } from './components/Call112Banner';
 import { IncidentForm } from './components/IncidentForm';
 import { GuidanceView } from './components/GuidanceView';
 import { ImmediateAlertBanner } from './components/ImmediateAlertBanner';
 import { NotificationSettingsModal } from './components/NotificationSettingsModal';
-import { MentalHealthSection } from './components/MentalHealthSection';
-import { AIChatbot } from './components/AIChatbot';
 import { WeatherWidget } from './components/WeatherWidget';
 import { DisasterAlertBanner } from './components/DisasterAlertBanner';
-import { EmergencyThreatMap } from './components/EmergencyThreatMap';
 import { DisasterBulletinBoard } from './components/DisasterBulletinBoard';
-import { AdminPortal } from './components/AdminPortal';
 import { Footer } from './components/Footer';
+
+// Lazy-loaded non-critical tabs — only downloaded when the user navigates to them
+const MentalHealthSection = lazy(() => import('./components/MentalHealthSection').then(m => ({ default: m.MentalHealthSection })));
+const AIChatbot = lazy(() => import('./components/AIChatbot').then(m => ({ default: m.AIChatbot })));
+const EmergencyThreatMap = lazy(() => import('./components/EmergencyThreatMap').then(m => ({ default: m.EmergencyThreatMap })));
+const AdminPortal = lazy(() => import('./components/AdminPortal').then(m => ({ default: m.AdminPortal })));
+
 import {
   EmergencyAnalysisResponse,
   UserLocation,
@@ -230,6 +233,14 @@ export const App: React.FC = () => {
       </nav>
 
       <main id="main-content">
+        <Suspense
+          fallback={
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '3rem', color: '#64748b' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite', marginRight: '0.5rem' }}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+              Loading…
+            </div>
+          }
+        >
         <div key={activeTab} className="tab-pane-animated">
           {activeTab === 'emergency' && (
             <>
@@ -316,6 +327,7 @@ export const App: React.FC = () => {
             <AdminPortal />
           )}
         </div>
+        </Suspense>
       </main>
 
       {/* Notification Settings & Browser Push Modal */}
