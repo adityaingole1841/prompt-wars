@@ -1,5 +1,10 @@
 # 🚨 Emergency Helper India
 
+[![Tests](https://img.shields.io/badge/automated%20tests-98%2F98%20passing-brightgreen.svg)](https://github.com/adityaingole1841/prompt-wars)
+[![Developer](https://img.shields.io/badge/Author-adityaingole1841-blue.svg)](https://github.com/adityaingole1841)
+[![Repository](https://img.shields.io/badge/GitHub-prompt--wars-181717.svg?logo=github)](https://github.com/adityaingole1841/prompt-wars)
+[![Tech Stack](https://img.shields.io/badge/Built%20With-React%2018%20%7C%20TypeScript%20%7C%20Express-61dafb.svg)](https://github.com/adityaingole1841/prompt-wars)
+
 An accessible, mobile-responsive emergency safety guidance web application built with **React**, **TypeScript**, and **Vite**, supported by a dedicated **Express backend API server**.
 
 > ⚠️ **Important Safety Disclaimer**: This application is an educational prototype and citizen safety guidance tool. It provides structured guidance and helps prepare what to say during an emergency call. **It is NOT an emergency dispatcher and does NOT replace dialing 112.** In any life-threatening situation, always contact official emergency responders directly by calling **112**.
@@ -216,7 +221,42 @@ Open your browser and navigate to:
 
 ---
 
+---
+
+## 🧪 Automated Testing Suite
+
+The repository includes 5 comprehensive automated test suites covering unit, integration, multilingual parsing, and safety validation:
+
+```bash
+# Run all automated test suites sequentially
+npm test
+
+# Run individual test suites
+npm run test:safety   # Multilingual & Safety Rules (25 tests)
+npm run test:chat     # Chat Safety Engine (25 tests)
+npm run test:weather  # Weather & Reverse Geocoding Service (15 tests)
+npm run test:api      # Server API Endpoints & Health Check (26 tests)
+npm run test:image    # Client-Side Image Optimizer (7 tests)
+```
+
+| Suite | File | Tests | Coverage |
+|-------|------|-------|----------|
+| **Multilingual & Safety Rules** | `tests/multilingual_and_safety.test.ts` | 25 | Hindi, Marathi, Hinglish, strict RFC schema, Section 4 alert templates |
+| **Chat Safety Engine** | `tests/chat_safety_engine.test.ts` | 25 | Cardiac arrest CPR, stroke F.A.S.T., choking, Tele-MANAS 14416 routing |
+| **Weather & Geocoding** | `tests/weather_service.test.ts` | 15 | In-flight deduplication, 10-minute caching, 3.5s timeout resilience |
+| **Server API Endpoints** | `tests/server_api.test.ts` | 26 | `/api/health`, `/api/chat`, `/api/analyze-emergency`, demo push notifications |
+| **Image Optimizer** | `tests/image_optimizer.test.ts` | 7 | Non-image rejection, 1200px bounding, EXIF stripping payload math |
+
+---
+
+## 👤 Author & Profile
+
+- **Developer**: **Aditya Ingole**
+- **GitHub Profile**: [@adityaingole1841](https://github.com/adityaingole1841)
+- **Project Repository**: [adityaingole1841/prompt-wars](https://github.com/adityaingole1841/prompt-wars)
+
+---
+
 ## 📜 License
-Developed as an educational and public safety technology prototype for Indian citizens.
-# prompt-wars
-# prompt-wars
+
+MIT License — Developed as an educational and citizen safety guidance technology prototype for India.

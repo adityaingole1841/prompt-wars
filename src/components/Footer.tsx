@@ -17,6 +17,17 @@ export const Footer: React.FC = () => {
         <Shield size={14} />
         <span>Privacy: Zero-data-retention prototype. Photos and locations are never sold or stored on external servers.</span>
       </p>
+      <p style={{ marginTop: '0.65rem', fontSize: '0.8rem', color: '#94a3b8' }}>
+        Built with pride for Indian citizens by{' '}
+        <a
+          href="https://github.com/adityaingole1841"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#38bdf8', fontWeight: 700, textDecoration: 'none' }}
+        >
+          Aditya Ingole (@adityaingole1841)
+        </a>
+      </p>
     </footer>
   );
 };
